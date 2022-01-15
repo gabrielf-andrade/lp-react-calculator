@@ -12,20 +12,30 @@ const initialState = {
 };
 
 const Calculator = () => {
-  const [lastClick, setLastClick] = useState(null)
+  const [lastClick, setLastClick] = useState(null);
   const [calcState, setCalcState] = useState(initialState);
+
   const clearMemory = () => {
     setCalcState(initialState);
-    setLastClick(null)
+    setLastClick(null);
   };
+
   const setOperation = (operation) => {
-    setLastClick(operation)  
-    if(lastClick === operation) {
-        return
-    }  
+    if (lastClick === operation) {
+      return;
+    }
+    setLastClick(operation);
     if (calcState.currentIndex === 0) {
-      setCalcState({ ...calcState, operation, currentIndex: 1, clearDisplay: true });
+      setCalcState((prevState) => {
+        return { ...prevState, operation, currentIndex: 1, clearDisplay: true };
+      });
     } else {
+      if (["*", "/", "+", "-", "="].includes(lastClick)) {
+        setCalcState((prevState) => {
+          return { ...prevState, operation };
+        });
+        return;
+      }
       const equals = operation === "=";
       const currentOperation = calcState.operation;
       const values = [...calcState.values];
@@ -46,6 +56,10 @@ const Calculator = () => {
           values[0] = calcState.values[0];
           break;
       }
+      if (isNaN(values[0]) || !isFinite(values[0])) {
+        clearMemory();
+        return;
+      }
       values[1] = 0;
       setCalcState({
         displayValue: values[0],
@@ -57,21 +71,24 @@ const Calculator = () => {
     }
   };
   const addDigit = (n) => {
-    setLastClick(n)  
-    if (n === "." && calcState.displayValue.includes(".")) {
+    setLastClick(n);
+    if (n === "." && calcState.displayValue.toString().includes(".")) {
       return;
     }
     const clearDisplay = calcState.displayValue === "0" || calcState.clearDisplay;
     const currentValue = clearDisplay ? "" : calcState.displayValue;
     const displayValue = currentValue + n;
-    let newState = { ...calcState, displayValue, clearDisplay: false };
-    setCalcState(newState);
+    setCalcState((prevState) => {
+      return { ...prevState, displayValue, clearDisplay: false };
+    });
     if (n !== ".") {
       const i = calcState.currentIndex;
       const newValue = parseFloat(displayValue);
       const values = [...calcState.values];
       values[i] = newValue;
-      setCalcState({ ...newState, values });
+      setCalcState((prevState) => {
+        return { ...prevState, values };
+      });
     }
   };
 
